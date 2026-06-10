@@ -17,6 +17,18 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface Waiter {
+  id: string;
+  name: string;
+}
+
+export interface CompletedOrder {
+  id: string;
+  tableName: string;
+  total: number;
+  timestamp: number;
+}
+
 export interface Table {
   id: string;
   name: string;

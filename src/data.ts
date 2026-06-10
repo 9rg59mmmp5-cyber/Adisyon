@@ -60,3 +60,9 @@ export const INITIAL_TABLES: Table[] = Array.from({ length: 20 }, (_, i) => ({
   orders: [],
   status: 'empty'
 }));
+
+export const INITIAL_WAITERS: Waiter[] = [
+  { id: 'w1', name: 'Ahmet' },
+  { id: 'w2', name: 'Mehmet' },
+  { id: 'w3', name: 'Ayşe' }
+];
