@@ -9,11 +9,18 @@ export interface Product {
   categoryId: string;
   name: string;
   price: number;
-  stock: number;
   colorClass: string;
 }
 
-export interface CartItem {
+export interface OrderItem {
   product: Product;
   quantity: number;
+}
+
+export interface Table {
+  id: string;
+  name: string;
+  orders: OrderItem[];
+  status: 'empty' | 'occupied';
+  needsWaiter?: boolean;
 }
