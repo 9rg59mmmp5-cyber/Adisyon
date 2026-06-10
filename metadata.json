@@ -1,0 +1,6 @@
+{
+  "name": "Hızlı Adisyon POS",
+  "description": "Çiğköfte, pastane ve dondurmacılar için hızlı sipariş ve stok takip sistemi. PWA destekli.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
