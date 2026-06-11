@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Utensils,
   Croissant,
@@ -20,6 +20,8 @@ import {
   LogOut,
   TrendingUp,
   CalendarDays,
+  QrCode,
+  ExternalLink,
 } from "lucide-react";
 import {
   CATEGORIES,
@@ -28,6 +30,8 @@ import {
   INITIAL_WAITERS,
 } from "./data";
 import { Product, Table, OrderItem, Waiter, CompletedOrder } from "./types";
+import QRCode from "react-qr-code";
+import CustomerMenu from "./CustomerMenu";
 
 const iconMap: Record<string, React.FC<any>> = {
   Utensils,
@@ -77,6 +81,17 @@ export default function App() {
 
   const [completedOrders, setCompletedOrders] = useState<CompletedOrder[]>([]);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isPublicMenu, setIsPublicMenu] = useState(false);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setIsPublicMenu(window.location.hash === '#menu');
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const activeTable = useMemo(
     () => tables.find((t) => t.id === activeTableId),
@@ -152,6 +167,14 @@ export default function App() {
     );
   };
 
+  const handleRemoveProduct = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm("Bu ürünü silmek istediğinize emin misiniz?")) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+      // Optionally remove from carts, but for simplicity let's skip cart cleanup
+    }
+  };
+
   const handleAddToCart = (product: Product) => {
     if (!activeTableId) return;
     updateTableOrder(activeTableId, (orders) => {
@@ -223,6 +246,10 @@ export default function App() {
       0,
     );
   };
+
+  if (isPublicMenu) {
+    return <CustomerMenu products={products} />;
+  }
 
   const dailyReportModal = isReportOpen && (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
@@ -409,6 +436,41 @@ export default function App() {
     </div>
   );
 
+  const qrModal = isQrModalOpen && (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-indigo-50">
+          <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+            <QrCode size={24} className="text-indigo-600" />
+            Dijital Menü Özeti
+          </h3>
+          <button
+            onClick={() => setIsQrModalOpen(false)}
+            className="p-2 bg-white/60 hover:bg-white rounded-xl transition text-slate-600 shadow-sm"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6 flex-1 overflow-y-auto flex flex-col items-center justify-center text-center">
+          <div className="bg-white p-4 rounded-3xl shadow-sm border-2 border-slate-100 mb-6 relative">
+            <QRCode value={`${window.location.origin}${window.location.pathname}#menu`} size={200} />
+          </div>
+          <h4 className="text-xl font-bold text-slate-800 mb-2">Müşteri Menünüz Hazır</h4>
+          <p className="text-slate-500 mb-6 max-w-sm">Bu QR kodu masalarınıza yazdırarak müşterilerinizin restoran menünüze telefonlarından anında ulaşmasını sağlayabilirsiniz.</p>
+          
+          <a
+            href={`${window.location.origin}${window.location.pathname}#menu`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-md"
+          >
+            Menüyü Önizle <ExternalLink size={20} />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+
   if (!activeTableId) {
     return (
       <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
@@ -428,6 +490,13 @@ export default function App() {
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             {currentUser.role === "admin" && (
               <>
+                <button
+                  onClick={() => setIsQrModalOpen(true)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-sm px-4 py-2 rounded-xl font-bold hover:opacity-90 active:scale-95 transition whitespace-nowrap"
+                >
+                  <QrCode size={18} />
+                  Dijital Menü / QR
+                </button>
                 <button
                   onClick={() => setIsReportOpen(true)}
                   className="flex items-center gap-2 bg-white border border-emerald-200 shadow-sm px-4 py-2 rounded-xl text-emerald-700 font-bold hover:bg-emerald-50 active:scale-95 transition whitespace-nowrap"
@@ -524,6 +593,7 @@ export default function App() {
         </div>
         {waiterManagerModal}
         {dailyReportModal}
+        {qrModal}
       </div>
     );
   }
@@ -642,6 +712,15 @@ export default function App() {
                     <span className="absolute top-2 right-2 bg-sky-600 text-white font-black w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-10 text-xs md:text-sm">
                       {inCartItem.quantity}
                     </span>
+                  )}
+                  {currentUser?.role === "admin" && (
+                    <button
+                      onClick={(e) => handleRemoveProduct(e, product.id)}
+                      className="absolute top-2 left-2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white rounded-full bg-white/50 backdrop-blur-sm transition-colors z-10"
+                      title="Ürünü Sil"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   )}
                 </button>
               );
